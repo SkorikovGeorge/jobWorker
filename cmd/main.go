@@ -7,29 +7,20 @@ import (
 	"os/signal"
 	"syscall"
 
+	internalErr "github.com/SkorikovGeorge/jobWorker/internal/errors"
 	"github.com/SkorikovGeorge/jobWorker/internal/server"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
 
-var cfg = server.ServerConfig{
-	Address:         "localhost",
-	Port:            8080,
-	ReadTimeout:     5,
-	WriteTimeout:    5,
-	ShutdownTimeout: 30,
-	IdleTimeout:     60,
-}
-
 func main() {
 	var err error
-	srv := server.New(&cfg)
-	log.Info().Msg("Starting server")
+	log.Info().Msg("starting server...")
+	srv := server.New()
 
 	go func() {
 		if err = server.Run(srv); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatal().Msg("cant run")
-			// log.Fatal().Err(errors.Wrap(err, errs.ErrStartServer)).Msg(errors.Wrap(err, errs.ErrStartServer).Error())
+			log.Fatal().Err(errors.Wrap(err, internalErr.StartingServer)).Msg(errors.Wrap(err, internalErr.StartingServer).Error())
 		}
 	}()
 
@@ -37,14 +28,13 @@ func main() {
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	<-stop
-	log.Info().Msg("Server is shutting down...")
+	log.Info().Msg("server is shutting down...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), server.Cfg.ShutdownTimeout)
 	defer cancel()
 
 	if err = srv.Shutdown(ctx); err != nil {
-		log.Fatal().Msg("wrong wrong....")
-		// log.Fatal().Err(errors.Wrap(err, errs.ErrShutdown)).Msg(errors.Wrap(err, errs.ErrShutdown).Error())
+		log.Fatal().Err(errors.Wrap(err, internalErr.ShutdownServer)).Msg(errors.Wrap(err, internalErr.ShutdownServer).Error())
 	}
-	log.Info().Msg("Server is shut down gracefully")
+	log.Info().Msg("server has been shut down gracefully")
 }
