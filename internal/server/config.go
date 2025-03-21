@@ -11,8 +11,8 @@ type ServerConfig struct {
 	IdleTimeout     time.Duration
 }
 
-var Cfg = ServerConfig{
-	Address:         "localhost",
+var cfg = ServerConfig{
+	Address:         "0.0.0.0",
 	Port:            8080,
 	ReadTimeout:     time.Second * 5,
 	WriteTimeout:    time.Second * 5,

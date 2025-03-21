@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	internalErr "github.com/SkorikovGeorge/jobWorker/internal/errors"
+	internalErr "github.com/SkorikovGeorge/jobWorker/internal/consts"
 	"github.com/SkorikovGeorge/jobWorker/internal/server"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -15,12 +15,12 @@ import (
 
 func main() {
 	var err error
-	log.Info().Msg("starting server...")
+	log.Info().Msg("Server: starting server...")
 	srv := server.New()
 
 	go func() {
-		if err = server.Run(srv); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatal().Err(errors.Wrap(err, internalErr.StartingServer)).Msg(errors.Wrap(err, internalErr.StartingServer).Error())
+		if err = srv.Run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal().Err(errors.Wrap(err, internalErr.ErrStartingServer)).Msg(errors.Wrap(err, internalErr.ErrStartingServer).Error())
 		}
 	}()
 
@@ -28,13 +28,12 @@ func main() {
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	<-stop
-	log.Info().Msg("server is shutting down...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), server.Cfg.ShutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), srv.Config.ShutdownTimeout)
 	defer cancel()
 
 	if err = srv.Shutdown(ctx); err != nil {
-		log.Fatal().Err(errors.Wrap(err, internalErr.ShutdownServer)).Msg(errors.Wrap(err, internalErr.ShutdownServer).Error())
+		log.Fatal().Err(errors.Wrap(err, internalErr.ErrShutdownServer)).Msg(errors.Wrap(err, internalErr.ErrShutdownServer).Error())
 	}
-	log.Info().Msg("server has been shut down gracefully")
+	log.Info().Msg("Server: server has been shut down gracefully")
 }
