@@ -56,7 +56,10 @@ func CreateJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	job := structs.NewJob(req.Priority)
-	redis.RDB.Enqueue(context.Background(), job)
+	if err := redis.RDB.Enqueue(context.Background(), job); err != nil {
+		log.Error().Err(errors.Wrap(err, consts.ErrEnqueueRedis)).Msg(errors.Wrap(err, consts.ErrEnqueueRedis).Error())
+		return
+	}
 
 	if err := jsonhelpers.SendJSON(w, job); err != nil {
 		log.Error().Err(err).Msg("Error sending JSON")
@@ -84,7 +87,7 @@ func Resume(w http.ResponseWriter, r *http.Request) {
 	res := struct {
 		Msg string `json:"msg"`
 	}{
-		Msg: "Job processing continued",
+		Msg: "Job processing resumed",
 	}
 	if err := jsonhelpers.SendJSON(w, res); err != nil {
 		log.Error().Err(err).Msg("Error sending JSON")
